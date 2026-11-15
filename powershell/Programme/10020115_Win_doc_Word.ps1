@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 Kopiert .dotx-Vorlagen in %APPDATA%\Microsoft\Templates, setzt den Word-Benutzervorlagenpfad in der Registry
 und öffnet jede Vorlage einmal mit einer einzigen Word COM-Instanz (readonly).

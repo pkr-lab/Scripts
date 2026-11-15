@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 Windows-Updates, Treiberupdates und Winget-Software-Updates installieren.
 
