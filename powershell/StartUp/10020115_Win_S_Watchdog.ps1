@@ -2,6 +2,7 @@
 # Logging-Modul laden
 # ---------------------------------------------------------
 Import-Module (Join-Path $PSScriptRoot '..\Logging.psm1') -ErrorAction Stop
+Import-Module (Join-Path $PSScriptRoot '..\Common.psm1') -ErrorAction Stop
 
 # ---------------------------------------------------------
 # Internetverbindung prüfen (mit Retry und Timeout)
@@ -113,7 +114,13 @@ Write-Log -Level INFO -Message "Starte kombinierten Import- und WatchDog-Prozess
 # ---------------------------------------------------------
 # 0. Konfiguration
 # ---------------------------------------------------------
-$Source = "C:\Users\DLRG-JugendAndernach\DLRG\DLRG OG Andernach Projekte-Jugendnotebooks - Jugendnotebooks\Win11_C"
+try {
+    $Source = (Get-Konfiguration -Pflichtwert WatchdogQuelle).WatchdogQuelle
+} catch {
+    Write-Log -Level "ERROR" -Message "Abbruch: $($_.Exception.Message)"
+    Write-Log -Level INFO -Message "Gesamter Prozess beendet."
+    exit 1
+}
 $DestinationRoot = "C:\Users\Public\10020115_WinScripts"
 $Destination = Join-Path $DestinationRoot "Win11_C"
 

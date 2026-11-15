@@ -17,7 +17,7 @@ Voraussetzungen:
 param(
     [string]$VMName          = "*Win11ProTestUmgebung*",
     [string]$SourceZip       = "C:\Users\$env:USERNAME\IdeaProjects\PowerShell.zip",
-    [string]$DestinationInVM = "C:\Users\Win11ProTest\Desktop\PowerShell.zip",
+    [string]$DestinationInVM = "",
     [string]$GpoName         = "MeineTestGPO",
     [string]$GpoBackupPath   = "C:\GPO-Backups"
 )
@@ -28,6 +28,11 @@ $ErrorActionPreference = "Stop"
 # 1) Datei in VM kopieren (Hyper-V Guest Services erforderlich)
 # ---------------------------------------------------------
 function Send-FileToVM {
+    if (-not $DestinationInVM) {
+        Import-Module (Join-Path $PSScriptRoot '..\Common.psm1') -ErrorAction Stop
+        $vmBenutzer = (Get-Konfiguration -Pflichtwert VmBenutzer).VmBenutzer
+        $DestinationInVM = "C:\Users\$vmBenutzer\Desktop\PowerShell.zip"
+    }
     Write-Host "Kopiere '$SourceZip' -> VM '$VMName' : '$DestinationInVM' ..."
 
     if (-not (Test-Path $SourceZip)) {

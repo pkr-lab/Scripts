@@ -3,23 +3,33 @@
 Findet ein Gerät anhand seiner MAC-Adresse im lokalen Netzwerk und baut eine SSH-Verbindung auf.
 
 .PARAMETER TargetMac
-MAC-Adresse des Zielgeräts im Format XX-XX-XX-XX-XX-XX (Windows ARP-Format).
+MAC-Adresse des Zielgeräts im Format XX-XX-XX-XX-XX-XX (Windows ARP-Format). Standard: SshZielMac aus Konfiguration.psd1.
 
 .PARAMETER SshUser
 SSH-Benutzername. Standard: aktueller Windows-Benutzername.
 #>
 param(
-    [string]$TargetMac = "98-FA-9B-28-B0-22",
+    [string]$TargetMac = "",
     [string]$SshUser   = $env:USERNAME
 )
 
 $ErrorActionPreference = "Stop"
 
+if (-not $TargetMac) {
+    Import-Module (Join-Path $PSScriptRoot 'Common.psm1') -ErrorAction Stop
+    try {
+        $TargetMac = (Get-Konfiguration -Pflichtwert SshZielMac).SshZielMac
+    } catch {
+        Write-Host "FEHLER: $($_.Exception.Message)"
+        exit 1
+    }
+}
+
 function Find-IpByMac {
     param([string]$Mac)
 
     # ARP-Tabelle auslesen und nach MAC-Adresse suchen
-    # Windows ARP-Format: "  192.168.1.1          98-fa-9b-28-b0-22     dynamisch"
+    # Windows ARP-Format: "  192.168.1.1          aa-bb-cc-dd-ee-ff     dynamisch"
     $arpOutput = arp -a
     $macLower  = $Mac.ToLower()
 

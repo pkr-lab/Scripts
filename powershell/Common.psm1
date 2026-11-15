@@ -54,4 +54,27 @@ function Initialize-PackageInfrastructure {
     }
 }
 
-Export-ModuleMember -Function Test-IsAdmin, Get-InstalledProgram, Initialize-PackageInfrastructure
+function Get-Konfiguration {
+    param(
+        [string[]]$Pflichtwert = @(),
+        [switch]$Optional,
+        [string]$Pfad = (Join-Path $PSScriptRoot 'Konfiguration.psd1')
+    )
+
+    if (-not (Test-Path -LiteralPath $Pfad)) {
+        if ($Optional) { return @{} }
+        throw "Konfigurationsdatei fehlt: $Pfad (Vorlage: Konfiguration.example.psd1)"
+    }
+
+    $konfiguration = Import-PowerShellDataFile -LiteralPath $Pfad
+    $fehlend = @($Pflichtwert | Where-Object {
+        $wert = [string]$konfiguration[$_]
+        [string]::IsNullOrWhiteSpace($wert) -or $wert -match '^<.*>$'
+    })
+    if ($fehlend.Count -gt 0) {
+        throw "Konfigurationsdatei $Pfad ohne Wert fuer: $($fehlend -join ', ')"
+    }
+    return $konfiguration
+}
+
+Export-ModuleMember -Function Test-IsAdmin, Get-InstalledProgram, Initialize-PackageInfrastructure, Get-Konfiguration
