@@ -43,7 +43,7 @@ function Initialize-Logger {
     Write-Log -Level "INFO" -Message "Logger initialisiert. Logfile: $Path"
 }
 
-function Rotate-Log {
+function Invoke-LogRotation {
     if (-not $Global:LogFilePath -or -not (Test-Path $Global:LogFilePath)) { return }
 
     $sizeMB = (Get-Item $Global:LogFilePath).Length / 1MB
@@ -84,7 +84,7 @@ function Write-Log {
     $levels = @{ DEBUG = 1; INFO = 2; WARN = 3; ERROR = 4 }
     if ($levels[$Level] -lt $levels[$Global:LogLevel]) { return }
 
-    Rotate-Log
+    Invoke-LogRotation
 
     $callStack   = Get-PSCallStack
     $scriptFrame = $callStack | Where-Object { $_.ScriptName -and $_.ScriptName.Trim() -ne "" } | Select-Object -First 1
@@ -140,4 +140,4 @@ function Close-Logger {
     $Global:LastLogScriptName = $null
 }
 
-Export-ModuleMember -Function Initialize-Logger, Write-Log, Rotate-Log, Get-LogConfig, Close-Logger
+Export-ModuleMember -Function Initialize-Logger, Write-Log, Invoke-LogRotation, Get-LogConfig, Close-Logger
