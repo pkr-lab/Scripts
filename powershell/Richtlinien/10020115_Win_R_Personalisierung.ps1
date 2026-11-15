@@ -8,16 +8,6 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $Global:PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
 
-# Optional: In PS7+ OnScriptError abonnieren, in 5.1 nicht verfügbar
-if ($PSVersionTable.PSVersion.Major -ge 7) {
-    Register-EngineEvent -SourceIdentifier PowerShell.OnScriptError -Action {
-        try {
-            $msg = $_.SourceArgs[0].Exception.Message
-            Write-Log -Level 'ERROR' -Message "PowerShell-Fehler: $msg"
-        } catch { }
-    } | Out-Null
-}
-
 # ----------------------------------------------------------------
 # MODUL LADEN & LOGGING STARTEN
 # ----------------------------------------------------------------
