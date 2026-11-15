@@ -87,7 +87,7 @@ function Write-Log {
     Invoke-LogRotation
 
     $callStack   = Get-PSCallStack
-    $scriptFrame = $callStack | Where-Object { $_.ScriptName -and $_.ScriptName.Trim() -ne "" } | Select-Object -First 1
+    $scriptFrame = $callStack | Where-Object { $_.ScriptName -and $_.ScriptName.Trim() -ne "" -and $_.ScriptName -ne $PSCommandPath } | Select-Object -First 1
     $scriptName  = if ($scriptFrame) {
         Split-Path $scriptFrame.ScriptName -Leaf
     } elseif ($PSCommandPath) {
