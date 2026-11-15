@@ -177,7 +177,7 @@ $DestinationRoot = "C:\Users\Public\10020115_WinScripts"
 $Destination = Join-Path $DestinationRoot "Win11_C"
 
 # Relativer Pfad zur Message-Script-Datei (relativ zu Source / Destination)
-$MessageScriptRelative = "Software\Scripte\StartUp\10020115_Win_S_Messagebox.ps1"
+$MessageScriptRelative = "Software\Scripte\StartUp\10020115_Win_S_MessageWLAN.ps1"
 $MessageScriptSource = Join-Path $Source $MessageScriptRelative
 $MessageScriptDestination = Join-Path $Destination $MessageScriptRelative
 
