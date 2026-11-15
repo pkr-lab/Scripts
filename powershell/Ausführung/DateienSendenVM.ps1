@@ -4,7 +4,7 @@ Hilfsbefehle für Hyper-V-Testumgebung: Dateien in VM kopieren, GPO-Backup/Impor
 
 .DESCRIPTION
 Dieses Skript enthält häufig benötigte Befehle für die Arbeit mit der Hyper-V-Testmaschine.
-Befehle einzeln ausführen oder gezielt auskommentieren.
+Die Aktionen werden über ein interaktives Menü ausgewählt.
 
 Voraussetzungen:
 - Hyper-V-Modul installiert (Windows Feature)
