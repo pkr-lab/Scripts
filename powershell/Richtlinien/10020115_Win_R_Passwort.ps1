@@ -13,18 +13,6 @@ Import-Module (Join-Path $PSScriptRoot '..\Common.psm1') -ErrorAction Stop
 Initialize-Logger -Level "INFO"
 Write-Log -Level INFO -Message "Starte PIN-Komplexitaet GPO-Konfiguration"
 
-# Globaler Fehler-Handler (nur PS7+; in 5.1 nicht verfügbar)
-if ($PSVersionTable.PSVersion.Major -ge 7) {
-    try {
-        Register-EngineEvent -SourceIdentifier PowerShell.OnScriptError -Action {
-            try {
-                $msg = $_.SourceArgs[0].Exception.Message
-                Write-Log -Level "ERROR" -Message "PowerShell-Fehler: $msg"
-            } catch {}
-        } | Out-Null
-    } catch {}
-}
-
 # ---------------------------------------------------------
 # Admin-Check
 # ---------------------------------------------------------

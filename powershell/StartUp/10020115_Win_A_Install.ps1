@@ -24,18 +24,6 @@ Import-Module (Join-Path $PSScriptRoot '..\Common.psm1') -ErrorAction Stop
 Initialize-Logger -Level "INFO"
 Write-Log -Level INFO -Message "=== Erste-Einrichtung gestartet ==="
 
-# Fehler-Handler nur in PS7+
-if ($PSVersionTable.PSVersion.Major -ge 7) {
-    try {
-        Register-EngineEvent -SourceIdentifier PowerShell.OnScriptError -Action {
-            try {
-                $msg = $_.SourceArgs[0].Exception.Message
-                Write-Log -Level "ERROR" -Message "PowerShell-Fehler: $msg"
-            } catch {}
-        } | Out-Null
-    } catch {}
-}
-
 # ---------------------------------------------------------
 # Verzeichnisstruktur sicherstellen
 # ---------------------------------------------------------

@@ -25,18 +25,6 @@ $modulePath = Join-Path $PSScriptRoot '..\Logging.psm1'
 Import-Module $modulePath -ErrorAction Stop
 Import-Module (Join-Path $PSScriptRoot '..\Common.psm1') -ErrorAction Stop
 
-# Fehler-Handler nur in PS7+
-if ($PSVersionTable.PSVersion.Major -ge 7) {
-    try {
-        Register-EngineEvent -SourceIdentifier PowerShell.OnScriptError -Action {
-            try {
-                $msg = $_.SourceArgs[0].Exception.Message
-                Write-Log -Level "ERROR" -Message "PowerShell-Fehler: $msg"
-            } catch {}
-        } | Out-Null
-    } catch {}
-}
-
 # ---------------------------------------------------------
 # Hintergrundmodus: Erster Aufruf startet sich selbst hidden
 # ---------------------------------------------------------
