@@ -53,10 +53,21 @@ try {
 # ---------------------------------------------------------
 
 $rulesToEnable = @(
-    "Remotedesktop-UserMode-In-TCP",   # RDP (falls benoetigt)
     "FPS-ICMP4-ERQ-In",                # Ping IPv4
     "FPS-ICMP6-ERQ-In"                 # Ping IPv6
 )
+
+try {
+    $konfiguration = Get-Konfiguration -Optional
+} catch {
+    Write-Log -Level WARN -Message "Konfiguration nicht lesbar, RDP bleibt unveraendert: $($_.Exception.Message)"
+    $konfiguration = @{}
+}
+if ($konfiguration['RdpErlauben'] -eq $true) {
+    $rulesToEnable += "Remotedesktop-UserMode-In-TCP"
+} else {
+    Write-Log -Level INFO -Message "RDP-Regel wird nicht aktiviert (RdpErlauben in Konfiguration.psd1 nicht gesetzt)."
+}
 
 foreach ($rule in $rulesToEnable) {
     try {
