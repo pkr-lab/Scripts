@@ -1,2 +1,5 @@
 dist/
 powershell/Konfiguration.psd1
+.idea/
+*.log
+*.ps1.bak.*
