@@ -22,7 +22,7 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
 # MODUL LADEN & LOGGING STARTEN
 # ----------------------------------------------------------------
 
-$modulePath = 'C:\Users\Public\10020115_WinScripts\Win11_C\Software\Scripte\Logging.psm1'
+$modulePath = Join-Path $PSScriptRoot '..\Logging.psm1'
 Import-Module -Name $modulePath -ErrorAction Stop
 
 Initialize-Logger -Level 'INFO'

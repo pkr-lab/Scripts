@@ -5,7 +5,7 @@ und öffnet jede Vorlage einmal mit einer einzigen Word COM-Instanz (readonly).
 #>
 
 param(
-    [string]$ModulePath = "C:\Users\Public\10020115_WinScripts\Win11_C\Software\Scripte\Logging.psm1",
+    [string]$ModulePath = (Join-Path $PSScriptRoot '..\Logging.psm1'),
     [string]$TemplateSourcePath = "C:\Users\Public\10020115_WinScripts\Win11_C\Vorlagen",
     [ValidateSet("DEBUG","INFO","WARN","ERROR")]
     [string]$LogLevel = "INFO",
