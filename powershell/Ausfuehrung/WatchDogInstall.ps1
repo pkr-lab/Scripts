@@ -23,6 +23,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+Import-Module (Join-Path $PSScriptRoot '..\Common.psm1') -ErrorAction Stop
+
 $RunKeyPath  = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
 $RunKeyName  = "GPOWatchdogStarter"
 $RunKeyValue = "schtasks.exe /run /tn `"$TaskName`""
@@ -40,9 +42,7 @@ if ([string]::IsNullOrWhiteSpace($currentUser)) {
 Write-Host "Aktueller Benutzer: $currentUser"
 
 # Sicherheitswarnung, wenn als erhöhter Prozess gestartet
-$id  = [Security.Principal.WindowsIdentity]::GetCurrent()
-$pri = [Security.Principal.WindowsPrincipal]::new($id)
-if ($pri.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+if (Test-IsAdmin) {
     Write-Warning "Dieses Skript läuft als Administrator. Der Run-Key wird im Admin-Profil gesetzt, nicht im Benutzerprofil."
     Write-Warning "Empfehlung: PowerShell ohne 'Als Administrator' starten."
 }

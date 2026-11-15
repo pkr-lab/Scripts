@@ -24,6 +24,7 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
 
 $modulePath = Join-Path $PSScriptRoot '..\Logging.psm1'
 Import-Module -Name $modulePath -ErrorAction Stop
+Import-Module -Name (Join-Path $PSScriptRoot '..\Common.psm1') -ErrorAction Stop
 
 Initialize-Logger -Level 'INFO'
 Write-Log -Level INFO -Message 'Starte Gesamt-Konfiguration - Personalisierung'
@@ -32,13 +33,7 @@ Write-Log -Level INFO -Message 'Starte Gesamt-Konfiguration - Personalisierung'
 # ADMIN-CHECK (für HKLM zwingend)
 # ----------------------------------------------------------------
 
-function Test-Admin {
-    $id  = [Security.Principal.WindowsIdentity]::GetCurrent()
-    $pri = [Security.Principal.WindowsPrincipal]::new($id)
-    return $pri.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
-}
-
-if (-not (Test-Admin)) {
+if (-not (Test-IsAdmin)) {
     Write-Log -Level ERROR -Message 'Dieses Skript muss als Administrator ausgeführt werden (HKLM-Policies).'
     throw 'Administratorrechte erforderlich.'
 }
