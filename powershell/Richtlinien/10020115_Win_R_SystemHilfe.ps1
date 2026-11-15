@@ -26,7 +26,12 @@ if (-not (Test-IsAdmin)) {
 # ---------------------------------------------------------
 $Manufacturer   = "DLRG-Jugend Andernach | EDV & Technik"
 $SupportHours   = "10-18 Uhr"
-$SupportPhone   = "+49 1575 6018834"
+try {
+    $SupportPhone = (Get-Konfiguration -Pflichtwert SupportTelefon).SupportTelefon
+} catch {
+    Write-Log -Level ERROR -Message "Konfiguration nicht verwendbar: $($_.Exception.Message)"
+    throw
+}
 $SupportURL     = "https://andernach.dlrg.de"
 $Model          = "Jugendnotebook"
 $LogoPath       = "C:\Users\Public\10020115_WinScripts\Win11_C\Bilder\Logo\Logo.bmp"
