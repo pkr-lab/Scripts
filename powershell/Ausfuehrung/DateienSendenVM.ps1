@@ -28,6 +28,12 @@ $ErrorActionPreference = "Stop"
 # 1) Datei in VM kopieren (Hyper-V Guest Services erforderlich)
 # ---------------------------------------------------------
 function Send-FileToVM {
+    param(
+        [string]$VMName,
+        [string]$SourceZip,
+        [string]$DestinationInVM
+    )
+
     if (-not $DestinationInVM) {
         Import-Module (Join-Path $PSScriptRoot '..\Common.psm1') -ErrorAction Stop
         $vmBenutzer = (Get-Konfiguration -Pflichtwert VmBenutzer).VmBenutzer
@@ -62,6 +68,11 @@ function Open-HyperVLocalAccount {
 # 3) GPO exportieren (Backup)
 # ---------------------------------------------------------
 function Export-GpoBackup {
+    param(
+        [string]$GpoName,
+        [string]$GpoBackupPath
+    )
+
     Write-Host "Exportiere GPO '$GpoName' nach '$GpoBackupPath' ..."
 
     if (-not (Test-Path $GpoBackupPath)) {
@@ -76,6 +87,11 @@ function Export-GpoBackup {
 # 4) GPO importieren (Restore)
 # ---------------------------------------------------------
 function Import-GpoBackup {
+    param(
+        [string]$GpoName,
+        [string]$GpoBackupPath
+    )
+
     Write-Host "Importiere GPO '$GpoName' aus '$GpoBackupPath' ..."
 
     Import-GPO -BackupGpoName $GpoName `
@@ -100,9 +116,9 @@ Write-Host ""
 $choice = Read-Host "Aktion waehlen (1-4)"
 
 switch ($choice) {
-    "1" { Send-FileToVM }
+    "1" { Send-FileToVM -VMName $VMName -SourceZip $SourceZip -DestinationInVM $DestinationInVM }
     "2" { Open-HyperVLocalAccount }
-    "3" { Export-GpoBackup }
-    "4" { Import-GpoBackup }
+    "3" { Export-GpoBackup -GpoName $GpoName -GpoBackupPath $GpoBackupPath }
+    "4" { Import-GpoBackup -GpoName $GpoName -GpoBackupPath $GpoBackupPath }
     default { Write-Warning "Ungültige Eingabe." }
 }
