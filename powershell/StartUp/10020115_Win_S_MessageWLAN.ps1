@@ -69,8 +69,7 @@ if ($null -eq $lastDate -or $lastDate.Date -lt $today) {
     # beim Erhöhen: Datum = heute
     Set-CounterAndDate -path $counterFile -counter $currentCounter -date $today
 } else {
-    # nicht erhöht: stelle sicher, dass ein Datum in der Datei steht
-    if ($null -eq $lastDate) { $lastDate = $today }
+    # nicht erhöht: Zähler und Datum unverändert zurückschreiben
     Set-CounterAndDate -path $counterFile -counter $currentCounter -date $lastDate
 }
 
@@ -89,7 +88,7 @@ public static class User32 {
     public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 }
 "@
-    Add-Type -TypeDefinition $signature -PassThru | Out-Null
+    Add-Type -TypeDefinition $signature | Out-Null
 
     $HWND_TOPMOST = [IntPtr]::op_Explicit(-1)
     $SWP_NOMOVE = 0x0002
@@ -172,7 +171,6 @@ $btnOk.Width = 100
 $btnOk.Height = 32
 $btnOk.Anchor = 'Right'
 $btnOk.Add_Click({
-    $form.Tag = 'ok'
     $form.Close()
 })
 # Platzieren: Button in Column 1, Row 3, rechts ausrichten
