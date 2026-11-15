@@ -83,16 +83,6 @@ function Write-Log {
     }
 }
 
-function Get-LogConfig {
-    [PSCustomObject]@{
-        LogFilePath     = $Global:LogFilePath
-        LogLevel        = $Global:LogLevel
-        ConsoleOutput   = $Global:EnableConsoleOutput
-        MaxLogSizeMB    = $Global:MaxLogSizeMB
-        DefaultFolder   = $Global:DefaultLogFolder
-    }
-}
-
 # ---------------------------------------------------------
 # Internetverbindung prüfen (mit Retry und Timeout)
 # Wartezeit zwischen Versuchen standardmäßig 10 Sekunden
