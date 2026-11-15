@@ -35,55 +35,6 @@ function Test-InternetConnection {
     return $false
 }
 
-# ---------------------------------------------------------
-# Sicherstellen und Backup: Alle .ps1 Dateien konvertieren
-# - Backup wird angelegt: <file>.bak.<timestamp>
-# - Zielkodierung: UTF-16LE (Unicode) mit BOM (Windows PowerShell kompatibel)
-# ---------------------------------------------------------
-function Ensure-AllScriptsEncoding {
-    param(
-        [Parameter(Mandatory)]
-        [string]$RootPath
-    )
-
-    if (-not (Test-Path $RootPath)) {
-        Write-Log -Level "WARN" -Message "Ensure-AllScriptsEncoding: RootPath existiert nicht: $RootPath"
-        return
-    }
-
-    $timestamp = (Get-Date -Format "yyyyMMdd_HHmmss")
-    $ps1Files = Get-ChildItem -Path $RootPath -Filter "*.ps1" -Recurse -File -ErrorAction SilentlyContinue
-
-    foreach ($file in $ps1Files) {
-        try {
-            $bytes = [System.IO.File]::ReadAllBytes($file.FullName)
-            $needsConversion = $true
-
-            if ($bytes.Length -ge 2 -and $bytes[0] -eq 0xFF -and $bytes[1] -eq 0xFE) {
-                # UTF-16 LE BOM vorhanden -> kompatibel
-                $needsConversion = $false
-            } elseif ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
-                # UTF-8 with BOM -> kompatibel
-                $needsConversion = $false
-            }
-
-            if ($needsConversion) {
-                $backupPath = "$($file.FullName).bak.$timestamp"
-                Copy-Item -LiteralPath $file.FullName -Destination $backupPath -Force
-                $content = Get-Content -Raw -LiteralPath $file.FullName -ErrorAction Stop
-                # Konvertiere zu UTF-16LE (Unicode) mit BOM
-                $content | Out-File -LiteralPath $file.FullName -Encoding Unicode -Force
-                Write-Log -Level "INFO" -Message "Konvertiert zu UTF-16LE und Backup erstellt: $($file.FullName) -> $backupPath"
-            } else {
-                Write-Log -Level "DEBUG" -Message "Kodierung OK: $($file.FullName)"
-            }
-        }
-        catch {
-            Write-Log -Level "WARN" -Message "Ensure-AllScriptsEncoding fehlgeschlagen: $($file.FullName) - $($_.Exception.Message)"
-        }
-    }
-}
-
 function Get-AutoRunScript {
     param(
         [Parameter(Mandatory)]
@@ -256,25 +207,14 @@ Write-Log -Level INFO -Message "Warte 3 Sekunden, bevor WatchDog startet..."
 Start-Sleep -Seconds 3
 
 # ---------------------------------------------------------
-# 3. WATCHDOG – Kodierung sicherstellen, Backup, Skripte rekursiv ausführen
+# 3. WATCHDOG – Skripte rekursiv ausführen
 # - Ignoriere Skripte direkt in Software\Scripte und in StartUp\ und Ausfuehrung\
 # ---------------------------------------------------------
 Write-Log -Level INFO -Message "WatchDog gestartet."
 Write-Log -Level INFO -Message "Suche nach Skripten in: $ScriptRoot"
 Write-Log -Level DEBUG -Message "Ausgeschlossen: Wurzelordner und $($ExcludedFolders -join ', ')"
 
-# 1) Sicherstellen: alle Skripte konvertieren und Backup anlegen
-try {
-    if (Test-Path -Path $ScriptRoot) {
-        Ensure-AllScriptsEncoding -RootPath $ScriptRoot
-    } else {
-        Write-Log -Level "WARN" -Message "ScriptRoot existiert nicht: $ScriptRoot"
-    }
-} catch {
-    Write-Log -Level "ERROR" -Message "Fehler in Ensure-AllScriptsEncoding: $($_.Exception.Message)"
-}
-
-# 2) Skripte ausführen (separate Prozesse für Isolation; Kodierung ist jetzt kompatibel)
+# Skripte ausführen (separate Prozesse für Isolation)
 $Scripts = @()
 if (Test-Path -Path $ScriptRoot) {
     $Scripts = @(Get-AutoRunScript -ScriptRoot $ScriptRoot -ExcludedFolder $ExcludedFolders)
