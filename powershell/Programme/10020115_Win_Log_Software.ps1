@@ -1,42 +1,17 @@
 # Modul laden
 $modulePath = Join-Path $PSScriptRoot '..\Logging.psm1'
 Import-Module $modulePath -ErrorAction Stop
+Import-Module (Join-Path $PSScriptRoot '..\Common.psm1') -ErrorAction Stop
 
 Initialize-Logger -Level "INFO"
 
 Write-Log -Level INFO -Message "=== Software-Inventur gestartet ==="
 
-# Registry-Pfade für klassische Programme
-$classicPaths = @(
-    "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall",
-    "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
-)
-
-function Get-InstalledPrograms {
-    param([string]$RegistryPath)
-
-    if (Test-Path $RegistryPath) {
-        Get-ChildItem $RegistryPath | ForEach-Object {
-            $props = Get-ItemProperty $_.PsPath -ErrorAction SilentlyContinue
-            if ($props.DisplayName) {
-                [PSCustomObject]@{
-                    Name        = $props.DisplayName
-                    Version     = $props.DisplayVersion
-                    Publisher   = $props.Publisher
-                    InstallDate = $props.InstallDate
-                }
-            }
-        }
-    }
-}
-
 # === Klassische Programme ===
 Write-Log -Level INFO -Message "=== Klassische Programme ==="
 
 try {
-    $classicApps = foreach ($path in $classicPaths) {
-        Get-InstalledPrograms -RegistryPath $path
-    }
+    $classicApps = @(Get-InstalledProgram)
 
     if ($classicApps.Count -eq 0) {
         Write-Log -Level WARN -Message "Keine klassischen Programme gefunden."

@@ -7,6 +7,7 @@ $ErrorActionPreference = 'Stop'
 # =====================================================================
 $modulePath = Join-Path $PSScriptRoot '..\Logging.psm1'
 Import-Module -Name $modulePath -ErrorAction Stop
+Import-Module -Name (Join-Path $PSScriptRoot '..\Common.psm1') -ErrorAction Stop
 
 Initialize-Logger -Level 'INFO'
 Write-Log -Level INFO -Message "Scriptstart: Geraetepruefung & BIOS-Tool-Installation"
@@ -15,44 +16,10 @@ Write-Log -Level INFO -Message "Scriptstart: Geraetepruefung & BIOS-Tool-Install
 #  Helper-Funktionen
 # =====================================================================
 
-function Test-IsAdmin {
-    try {
-        $id = [Security.Principal.WindowsIdentity]::GetCurrent()
-        $p  = [Security.Principal.WindowsPrincipal]::new($id)
-        return $p.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-    } catch {
-        return $false
-    }
-}
-
 function Test-HasHPCMSL {
     if (Get-InstalledModule -Name 'HPCMSL' -ErrorAction SilentlyContinue) { return $true }
     if (Get-Module -ListAvailable -Name 'HPCMSL')                         { return $true }
     return $false
-}
-
-function Ensure-PackageInfra {
-    Write-Log -Level INFO -Message "Stelle Paket-Infrastruktur sicher (NuGet, PSGallery)..."
-
-    try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch {}
-
-    try {
-        Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope AllUsers -ErrorAction Stop | Out-Null
-    } catch {
-        Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser -ErrorAction Stop | Out-Null
-    }
-
-    try {
-        $pg = Get-PSRepository -Name 'PSGallery' -ErrorAction Stop
-        if ($pg.InstallationPolicy -ne 'Trusted') {
-            Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted -ErrorAction Stop
-        }
-    } catch {
-        Register-PSRepository -Default -ErrorAction Stop
-        Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted -ErrorAction Stop
-    }
-
-    Write-Log -Level INFO -Message "Paket-Infrastruktur bereit."
 }
 
 function Install-LenovoSystemUpdate {
@@ -93,7 +60,9 @@ try {
             }
 
             Write-Log -Level INFO -Message "HPCMSL nicht gefunden – Installation wird vorbereitet..."
-            Ensure-PackageInfra
+            Write-Log -Level INFO -Message "Stelle Paket-Infrastruktur sicher (NuGet, PSGallery)..."
+            Initialize-PackageInfrastructure
+            Write-Log -Level INFO -Message "Paket-Infrastruktur bereit."
 
             $scope = if (Test-IsAdmin) { 'AllUsers' } else { 'CurrentUser' }
             Write-Log -Level INFO -Message "Installations-Scope: $scope"

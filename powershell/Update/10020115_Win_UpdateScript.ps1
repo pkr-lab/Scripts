@@ -23,6 +23,7 @@ $ErrorActionPreference = "Stop"
 
 $modulePath = Join-Path $PSScriptRoot '..\Logging.psm1'
 Import-Module $modulePath -ErrorAction Stop
+Import-Module (Join-Path $PSScriptRoot '..\Common.psm1') -ErrorAction Stop
 
 # Fehler-Handler nur in PS7+
 if ($PSVersionTable.PSVersion.Major -ge 7) {
@@ -75,7 +76,7 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force -ErrorAction Silently
 if (-not (Get-Module -ListAvailable -Name PSWindowsUpdate)) {
     Write-Log -Level INFO -Message "PSWindowsUpdate nicht gefunden – wird installiert..."
     try {
-        Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope AllUsers -ErrorAction Stop | Out-Null
+        Initialize-PackageInfrastructure
         Install-Module -Name PSWindowsUpdate -Force -Scope AllUsers -ErrorAction Stop
         Write-Log -Level INFO -Message "PSWindowsUpdate erfolgreich installiert."
     } catch {

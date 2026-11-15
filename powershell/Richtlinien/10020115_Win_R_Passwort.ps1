@@ -8,6 +8,7 @@ $ErrorActionPreference = "Stop"
 
 $modulePath = Join-Path $PSScriptRoot '..\Logging.psm1'
 Import-Module $modulePath -ErrorAction Stop
+Import-Module (Join-Path $PSScriptRoot '..\Common.psm1') -ErrorAction Stop
 
 Initialize-Logger -Level "INFO"
 Write-Log -Level INFO -Message "Starte PIN-Komplexitaet GPO-Konfiguration"
@@ -28,9 +29,7 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
 # Admin-Check
 # ---------------------------------------------------------
 
-$id  = [Security.Principal.WindowsIdentity]::GetCurrent()
-$pri = [Security.Principal.WindowsPrincipal]::new($id)
-if (-not $pri.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+if (-not (Test-IsAdmin)) {
     Write-Log -Level ERROR -Message "Dieses Skript muss als Administrator ausgefuehrt werden (HKLM-Schreibzugriff)."
     throw "Administratorrechte erforderlich."
 }

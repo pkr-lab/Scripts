@@ -8,6 +8,7 @@ $ErrorActionPreference = 'Stop'
 
 $modulePath = Join-Path $PSScriptRoot '..\Logging.psm1'
 Import-Module $modulePath -ErrorAction Stop
+Import-Module (Join-Path $PSScriptRoot '..\Common.psm1') -ErrorAction Stop
 
 Initialize-Logger -Level "INFO"
 Write-Log -Level INFO -Message "Starte Firewall-Konfiguration"
@@ -16,9 +17,7 @@ Write-Log -Level INFO -Message "Starte Firewall-Konfiguration"
 # Admin-Check
 # ---------------------------------------------------------
 
-$id  = [Security.Principal.WindowsIdentity]::GetCurrent()
-$pri = [Security.Principal.WindowsPrincipal]::new($id)
-if (-not $pri.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+if (-not (Test-IsAdmin)) {
     Write-Log -Level ERROR -Message "Administratorrechte erforderlich."
     throw "Dieses Skript muss als Administrator ausgefuehrt werden."
 }
