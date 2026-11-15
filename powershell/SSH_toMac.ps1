@@ -65,7 +65,7 @@ function Invoke-PingSweep {
 Write-Host "Suche Geraet mit MAC-Adresse: $TargetMac"
 
 # Broadcast-Ping zur ARP-Cache-Aktualisierung
-try { ping -n 2 255.255.255.255 2>$null | Out-Null } catch {}
+try { ping -n 2 255.255.255.255 2>$null | Out-Null } catch { Write-Verbose "Broadcast-Ping fehlgeschlagen: $($_.Exception.Message)" }
 
 $ip = Find-IpByMac -Mac $TargetMac
 

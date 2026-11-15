@@ -61,7 +61,11 @@ foreach ($item in @(
     @{Path=$RegSysPol;   Name='Wallpaper'},
     @{Path=$RegSysPol;   Name='WallpaperStyle'}
 )) {
-    try { Remove-ItemProperty -Path $item.Path -Name $item.Name -ErrorAction SilentlyContinue } catch { }
+    try {
+        Remove-ItemProperty -Path $item.Path -Name $item.Name -ErrorAction SilentlyContinue
+    } catch {
+        Write-Log -Level DEBUG -Message "Nicht entfernt: $($item.Name) aus $($item.Path) - $($_.Exception.Message)"
+    }
 }
 
 Write-Log -Level INFO -Message 'Alle Richtlinien erfolgreich zurückgesetzt'
@@ -162,6 +166,11 @@ catch {
 # Gruppenrichtlinien aktualisieren (optional, falls GPOs vorhanden sind)
 try {
     gpupdate /target:computer /force | Out-Null
-} catch { }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Log -Level WARN -Message "gpupdate beendet mit Exit-Code $LASTEXITCODE"
+    }
+} catch {
+    Write-Log -Level DEBUG -Message "gpupdate nicht ausgefuehrt: $($_.Exception.Message)"
+}
 
 Write-Log -Level INFO -Message 'Gesamt-Konfiguration abgeschlossen'

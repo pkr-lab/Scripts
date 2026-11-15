@@ -26,6 +26,7 @@ function Get-CounterAndDate {
             }
         } catch {
             # Fehler beim Lesen/Parsen -> Defaults
+            Write-Verbose "Zaehlerdatei nicht lesbar, verwende Standardwerte: $($_.Exception.Message)"
         }
     }
     return @{ Counter = 0; Date = $null }
