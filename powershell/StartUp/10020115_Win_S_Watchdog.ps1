@@ -134,22 +134,21 @@ Write-Log -Level INFO -Message "Prüfe Internetverbindung vor Kopiervorgang..."
 if (-not (Test-InternetConnection -Retries 5 -DelaySeconds 10 -TimeoutSec 10)) {
     Write-Log -Level "ERROR" -Message "Abbruch: Keine Internetverbindung. Versuche Message-Script auszuführen."
 
-    if (Test-Path -Path $MessageScriptSource) {
-        Write-Log -Level "INFO" -Message "Führe Message-Script aus (Quelle): $MessageScriptSource"
+    $MessageScript = @($MessageScriptSource, $MessageScriptDestination) |
+        Where-Object { Test-Path -Path $_ } |
+        Select-Object -First 1
+
+    if ($MessageScript) {
+        Write-Log -Level "INFO" -Message "Führe Message-Script aus: $MessageScript"
         try {
-            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $MessageScriptSource
-            Write-Log -Level "INFO" -Message "Message-Script ausgeführt: $MessageScriptSource"
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $MessageScript
+            if ($LASTEXITCODE -eq 0) {
+                Write-Log -Level "INFO" -Message "Message-Script ausgeführt: $MessageScript"
+            } else {
+                Write-Log -Level "WARN" -Message "Message-Script beendet mit Exit-Code ${LASTEXITCODE}: $MessageScript"
+            }
         } catch {
-            Write-Log -Level "WARN" -Message "Ausführen des Message-Scripts (Quelle) fehlgeschlagen: $($_.Exception.Message)"
-        }
-    }
-    elseif (Test-Path -Path $MessageScriptDestination) {
-        Write-Log -Level "INFO" -Message "Führe Message-Script aus (Ziel): $MessageScriptDestination"
-        try {
-            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $MessageScriptDestination
-            Write-Log -Level "INFO" -Message "Message-Script ausgeführt: $MessageScriptDestination"
-        } catch {
-            Write-Log -Level "WARN" -Message "Ausführen des Message-Scripts (Ziel) fehlgeschlagen: $($_.Exception.Message)"
+            Write-Log -Level "WARN" -Message "Ausführen des Message-Scripts fehlgeschlagen: $($_.Exception.Message)"
         }
     }
     else {
@@ -272,14 +271,18 @@ if (Test-Path -Path $ScriptRoot) {
     Write-Log -Level "WARN" -Message "ScriptRoot existiert nicht: $ScriptRoot"
 }
 
-if ($Scripts -and $Scripts.Count -gt 0) {
+if ($Scripts.Count -gt 0) {
+    $psExe = (Get-Command powershell.exe -ErrorAction SilentlyContinue).Source
     foreach ($Script in $Scripts) {
         Write-Log -Level "INFO" -Message "Starte Script (separate process): $($Script.FullName)"
         try {
-            $psExe = (Get-Command powershell.exe -ErrorAction Stop).Source
-            $argList = @("-NoProfile","-ExecutionPolicy","Bypass","-File",$Script.FullName)
-            Start-Process -FilePath $psExe -ArgumentList $argList -Wait -NoNewWindow -ErrorAction Stop
-            Write-Log -Level "INFO" -Message "Fertig: $($Script.Name)"
+            $argList = @("-NoProfile","-ExecutionPolicy","Bypass","-File","`"$($Script.FullName)`"")
+            $process = Start-Process -FilePath $psExe -ArgumentList $argList -Wait -NoNewWindow -PassThru -ErrorAction Stop
+            if ($process.ExitCode -eq 0) {
+                Write-Log -Level "INFO" -Message "Fertig: $($Script.Name)"
+            } else {
+                Write-Log -Level "ERROR" -Message "Fehler in $($Script.Name): Exit-Code $($process.ExitCode)"
+            }
         }
         catch {
             Write-Log -Level "ERROR" -Message "Fehler in $($Script.Name): $($_.Exception.Message)"
