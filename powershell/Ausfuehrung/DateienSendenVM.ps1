@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 Hilfsbefehle für Hyper-V-Testumgebung: Dateien in VM kopieren, GPO-Backup/Import.
 

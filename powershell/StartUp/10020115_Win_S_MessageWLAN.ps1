@@ -1,4 +1,4 @@
-# Als Administrator ausführen
+﻿# Als Administrator ausführen
 $baseDir = 'C:\Users\Public\10020115_WinScripts'
 $counterFile = Join-Path $baseDir '10020115_Win_R_WLANCounter.txt'
 $threshold = 20   # Anzahl Tage bis zur Anzeige

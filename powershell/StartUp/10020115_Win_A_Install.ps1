@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 Erste-Einrichtung: Erstellt Verzeichnisstruktur und prueft Voraussetzungen.
 

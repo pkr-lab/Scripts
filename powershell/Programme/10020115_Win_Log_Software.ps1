@@ -1,4 +1,4 @@
-# Modul laden
+﻿# Modul laden
 $modulePath = Join-Path $PSScriptRoot '..\Logging.psm1'
 Import-Module $modulePath -ErrorAction Stop
 Import-Module (Join-Path $PSScriptRoot '..\Common.psm1') -ErrorAction Stop

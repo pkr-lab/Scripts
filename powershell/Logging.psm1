@@ -1,4 +1,4 @@
-# Globale Variablen
+﻿# Globale Variablen
 $Global:LogFilePath = $null
 $Global:LogLevel = "INFO"
 $Global:EnableConsoleOutput = $true

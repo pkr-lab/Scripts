@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 Richtet den GPO-Watchdog als geplante Aufgabe ein, die bei jedem Benutzer-Login startet.
 

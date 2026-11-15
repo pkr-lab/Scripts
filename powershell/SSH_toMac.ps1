@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 Findet ein Gerät anhand seiner MAC-Adresse im lokalen Netzwerk und baut eine SSH-Verbindung auf.
 
