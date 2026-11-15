@@ -113,9 +113,9 @@ try {
             Write-Log -Level ERROR -Message "Fehler beim Starten von Word COM: $_"
         }
         finally {
-            if ($word -ne $null) {
-                try { $word.Quit() } catch {}
-                try { [System.Runtime.Interopservices.Marshal]::ReleaseComObject($word) | Out-Null } catch {}
+            if ($null -ne $word) {
+                try { $word.Quit() } catch { Write-Log -Level DEBUG -Message "Word.Quit fehlgeschlagen: $_" }
+                try { [System.Runtime.Interopservices.Marshal]::ReleaseComObject($word) | Out-Null } catch { Write-Log -Level DEBUG -Message "COM-Objekt nicht freigegeben: $_" }
                 Remove-Variable word -ErrorAction SilentlyContinue
                 [GC]::Collect()
                 [GC]::WaitForPendingFinalizers()

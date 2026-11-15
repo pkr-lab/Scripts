@@ -233,7 +233,11 @@ try {
             Write-Log -Level "WARN" -Message "Attribute setzen fehlgeschlagen: $($_.FullName) - $($_.Exception.Message)"
         }
     }
-    try { (Get-Item -LiteralPath $Destination -Force).Attributes = 'Normal' } catch {}
+    try {
+        (Get-Item -LiteralPath $Destination -Force).Attributes = 'Normal'
+    } catch {
+        Write-Log -Level "DEBUG" -Message "Attribute des Zielordners nicht gesetzt: $($_.Exception.Message)"
+    }
 } catch {
     Write-Log -Level "WARN" -Message "Fehler beim Entfernen von Attributen im Ziel: $($_.Exception.Message)"
 }
