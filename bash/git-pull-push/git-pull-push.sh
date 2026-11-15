@@ -112,7 +112,7 @@ fi
 
 rsync_args=(-a --exclude=.git)
 read -r -a ausnahmen <<<"$AUSNAHMEN"
-for muster in "${ausnahmen[@]}"; do
+for muster in ${ausnahmen[@]+"${ausnahmen[@]}"}; do
   rsync_args+=("--exclude=${muster}")
 done
 if [ "$LOESCHEN" = true ]; then
