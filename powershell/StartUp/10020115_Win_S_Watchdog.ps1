@@ -1,87 +1,7 @@
 # ---------------------------------------------------------
-# LOGGER – direkt integriert (verbessert)
+# Logging-Modul laden
 # ---------------------------------------------------------
-
-# Globale Variablen
-$Global:LogFilePath = $null
-$Global:LogLevel = "INFO"
-$Global:EnableConsoleOutput = $true
-$Global:MaxLogSizeMB = 5
-$Global:DefaultLogFolder = "C:\Users\Public\10020115_WinScripts\Logs\"
-
-function Initialize-Logger {
-    param(
-        [string]$FileName = "log_$(Get-Date -Format 'yyyy-MM-dd_HH-mm-ss').log",
-        [ValidateSet("DEBUG","INFO","WARN","ERROR")]
-        [string]$Level = "INFO",
-        [bool]$ConsoleOutput = $true,
-        [int]$MaxSizeMB = 5
-    )
-
-    if (-not (Test-Path $Global:DefaultLogFolder)) {
-        New-Item -Path $Global:DefaultLogFolder -ItemType Directory -Force | Out-Null
-    }
-
-    $Path = Join-Path $Global:DefaultLogFolder $FileName
-
-    if (-not (Test-Path $Path)) {
-        New-Item -Path $Path -ItemType File -Force | Out-Null
-    }
-
-    $Global:LogFilePath = $Path
-    $Global:LogLevel = $Level
-    $Global:EnableConsoleOutput = $ConsoleOutput
-    $Global:MaxLogSizeMB = $MaxSizeMB
-
-    Write-Log -Level "INFO" -Message "Logger initialisiert. Logfile: $Path"
-}
-
-function Rotate-Log {
-    if (-not (Test-Path $Global:LogFilePath)) { return }
-
-    $sizeMB = (Get-Item $Global:LogFilePath).Length / 1MB
-
-    if ($sizeMB -ge $Global:MaxLogSizeMB) {
-        $timestamp = (Get-Date -Format "yyyyMMdd_HHmmss")
-        $archivePath = "$Global:LogFilePath.$timestamp.bak"
-
-        Move-Item -Path $Global:LogFilePath -Destination $archivePath -Force
-        New-Item -Path $Global:LogFilePath -ItemType File -Force | Out-Null
-        Write-Log -Level "INFO" -Message "Log rotiert: $archivePath"
-    }
-}
-
-function Write-Log {
-    param(
-        [Parameter(Mandatory)]
-        [ValidateSet("DEBUG","INFO","WARN","ERROR")]
-        [string]$Level,
-
-        [Parameter(Mandatory)]
-        [string]$Message
-    )
-
-    $levels = @{ DEBUG = 1; INFO = 2; WARN = 3; ERROR = 4 }
-    if ($levels[$Level] -lt $levels[$Global:LogLevel]) {
-        return
-    }
-
-    Rotate-Log
-
-    $timestamp = (Get-Date -Format "yyyy-MM-dd HH:mm:ss")
-    $entry = "[$timestamp] [$Level] $Message"
-
-    Add-Content -Path $Global:LogFilePath -Value $entry
-
-    if ($Global:EnableConsoleOutput) {
-        switch ($Level) {
-            "ERROR" { Write-Host $entry -ForegroundColor Red }
-            "WARN"  { Write-Host $entry -ForegroundColor Yellow }
-            "INFO"  { Write-Host $entry -ForegroundColor Cyan }
-            "DEBUG" { Write-Host $entry -ForegroundColor DarkGray }
-        }
-    }
-}
+Import-Module (Join-Path $PSScriptRoot '..\Logging.psm1') -ErrorAction Stop
 
 # ---------------------------------------------------------
 # Internetverbindung prüfen (mit Retry und Timeout)
@@ -166,7 +86,7 @@ function Ensure-AllScriptsEncoding {
 # ---------------------------------------------------------
 # Logger initialisieren
 # ---------------------------------------------------------
-Initialize-Logger -Level "INFO"
+Initialize-Logger -Level "INFO" -FileName "log_$(Get-Date -Format 'yyyy-MM-dd_HH-mm-ss').log"
 Write-Log -Level INFO -Message "Starte kombinierten Import- und WatchDog-Prozess."
 
 # ---------------------------------------------------------
