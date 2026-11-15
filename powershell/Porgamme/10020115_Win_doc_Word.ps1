@@ -32,7 +32,7 @@ try {
 
     # --- Templates sammeln ---
     $Templates = Get-ChildItem -Path $TemplateSourcePath -Filter *.dotx -File -ErrorAction Stop
-    if (-not $Templates -or $Templates.Count -eq 0) {
+    if (-not $Templates) {
         Write-Log -Level WARN -Message "Keine .dotx Dateien im Ordner gefunden: $TemplateSourcePath"
         throw "Keine Vorlagen vorhanden."
     }
@@ -77,7 +77,6 @@ try {
             New-ItemProperty -Path $regPath -Name "PersonalTemplates" -PropertyType ExpandString -Value $expandValue -Force | Out-Null
             New-ItemProperty -Path $regPath -Name "USERTEMPLATES" -PropertyType ExpandString -Value $expandValue -Force | Out-Null
 
-            # <-- Hier die korrigierte Interpolation mit ${ver}
             Write-Log -Level INFO -Message "Registry gesetzt für Office ${ver}: $expandValue"
         }
         catch {
