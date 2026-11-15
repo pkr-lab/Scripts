@@ -143,9 +143,14 @@ Write-Log -Level INFO -Message "Pruefe Winget-Updates..."
 if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
     Write-Log -Level WARN -Message "winget nicht gefunden – Software-Updates werden uebersprungen."
 } else {
+    $vorherigeFehleraktion = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
     try {
         # Quellen aktualisieren
         winget source update 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Log -Level WARN -Message "winget source update beendet mit Exit-Code $LASTEXITCODE."
+        }
 
         # Verfuegbare Upgrades als Text auslesen (JSON-Ausgabe ist winget-versionsabhaengig)
         $upgradeOutput = winget upgrade --accept-source-agreements 2>&1 | Out-String
@@ -156,10 +161,16 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
             Write-Log -Level INFO -Message "Winget-Updates gefunden. Starte Installation..."
             winget upgrade --all --silent --accept-package-agreements --accept-source-agreements 2>&1 |
                 ForEach-Object { Write-Log -Level INFO -Message "winget: $_" }
-            Write-Log -Level INFO -Message "Winget-Updates abgeschlossen."
+            if ($LASTEXITCODE -eq 0) {
+                Write-Log -Level INFO -Message "Winget-Updates abgeschlossen."
+            } else {
+                Write-Log -Level WARN -Message "Winget-Updates beendet mit Exit-Code $LASTEXITCODE."
+            }
         }
     } catch {
         Write-Log -Level ERROR -Message "Fehler bei Winget-Updates: $($_.Exception.Message)"
+    } finally {
+        $ErrorActionPreference = $vorherigeFehleraktion
     }
 }
 
