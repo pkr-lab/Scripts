@@ -5,7 +5,7 @@ Skriptsammlung für die Windows-Administration der DLRG-Jugend Andernach: Update
 ## Quickstart
 
 ```powershell
-powershell.exe -ExecutionPolicy Bypass -File .\Ausführung\WatchDogInstall.ps1
+powershell.exe -ExecutionPolicy Bypass -File .\Ausfuehrung\WatchDogInstall.ps1
 ```
 
 Als normaler Benutzer ausführen. Skripte mit Systemzugriff vorher in einer Testumgebung prüfen.
