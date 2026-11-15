@@ -83,6 +83,27 @@ function Ensure-AllScriptsEncoding {
     }
 }
 
+function Get-AutoRunScript {
+    param(
+        [Parameter(Mandatory)]
+        [string]$ScriptRoot,
+        [string[]]$ExcludedFolder = @()
+    )
+
+    $separator = [IO.Path]::DirectorySeparatorChar
+    $root = [IO.Path]::GetFullPath($ScriptRoot).TrimEnd($separator) + $separator
+    $excludedPrefixes = @($ExcludedFolder | ForEach-Object { $root + $_ + $separator })
+
+    Get-ChildItem -Path $ScriptRoot -Filter "*.ps1" -Recurse -File -ErrorAction SilentlyContinue |
+        Where-Object {
+            $full = [IO.Path]::GetFullPath($_.FullName)
+            $relative = $full.Substring($root.Length)
+            if ($relative.IndexOf($separator) -lt 0) { return $false }
+            $excluded = $excludedPrefixes | Where-Object { $full.StartsWith($_, [System.StringComparison]::OrdinalIgnoreCase) }
+            -not $excluded
+        }
+}
+
 # ---------------------------------------------------------
 # Logger initialisieren
 # ---------------------------------------------------------
@@ -103,7 +124,7 @@ $MessageScriptDestination = Join-Path $Destination $MessageScriptRelative
 
 # WatchDog / Skriptpfade
 $ScriptRoot = Join-Path $Destination "Software\Scripte"
-$StartUpExcludePath = Join-Path $Destination "Software\Scripte\StartUp"
+$ExcludedFolders = @("StartUp", "Ausfuehrung")
 
 Write-Log -Level INFO -Message "Prüfe Internetverbindung vor Kopiervorgang..."
 
@@ -226,11 +247,11 @@ Start-Sleep -Seconds 3
 
 # ---------------------------------------------------------
 # 3. WATCHDOG – Kodierung sicherstellen, Backup, Skripte rekursiv ausführen
-# - Ignoriere alle Skripte unter dem exakten StartUp-Pfad
+# - Ignoriere Skripte direkt in Software\Scripte und in StartUp\ und Ausfuehrung\
 # ---------------------------------------------------------
 Write-Log -Level INFO -Message "WatchDog gestartet."
 Write-Log -Level INFO -Message "Suche nach Skripten in: $ScriptRoot"
-Write-Log -Level DEBUG -Message "StartUp-Ausschlusspfad: $StartUpExcludePath"
+Write-Log -Level DEBUG -Message "Ausgeschlossen: Wurzelordner und $($ExcludedFolders -join ', ')"
 
 # 1) Sicherstellen: alle Skripte konvertieren und Backup anlegen
 try {
@@ -246,16 +267,7 @@ try {
 # 2) Skripte ausführen (separate Prozesse für Isolation; Kodierung ist jetzt kompatibel)
 $Scripts = @()
 if (Test-Path -Path $ScriptRoot) {
-    # Normalisiere Ausschlusspfad mit abschließendem Backslash für StartsWith-Vergleich
-    $excludeNormalized = [IO.Path]::GetFullPath($StartUpExcludePath)
-    if (-not $excludeNormalized.EndsWith('\')) { $excludeNormalized += '\' }
-
-    $Scripts = Get-ChildItem -Path $ScriptRoot -Filter "*.ps1" -Recurse -File -ErrorAction SilentlyContinue |
-               Where-Object {
-                   $full = [IO.Path]::GetFullPath($_.FullName)
-                   # Ausschluss: exakter StartUp-Pfad (inkl. Unterordner) wird ausgeschlossen
-                   -not ($full.StartsWith($excludeNormalized, [System.StringComparison]::InvariantCultureIgnoreCase))
-               }
+    $Scripts = @(Get-AutoRunScript -ScriptRoot $ScriptRoot -ExcludedFolder $ExcludedFolders)
 } else {
     Write-Log -Level "WARN" -Message "ScriptRoot existiert nicht: $ScriptRoot"
 }
@@ -274,7 +286,7 @@ if ($Scripts -and $Scripts.Count -gt 0) {
         }
     }
 } else {
-    Write-Log -Level "WARN" -Message "Keine Skripte gefunden (nach Ausschluss von StartUp)."
+    Write-Log -Level "WARN" -Message "Keine Skripte gefunden (nach Ausschluss von Wurzelordner, $($ExcludedFolders -join ', '))."
 }
 
 Write-Log -Level INFO -Message "WatchDog abgeschlossen."
