@@ -41,8 +41,7 @@ try {
 # ---------------------------------------------------------
 
 try {
-    Set-NetFirewallProfile -Profile Domain,Private -DefaultInboundAction Block -DefaultOutboundAction Allow
-    Set-NetFirewallProfile -Profile Public         -DefaultInboundAction Block -DefaultOutboundAction Allow
+    Set-NetFirewallProfile -Profile Domain,Private,Public -DefaultInboundAction Block -DefaultOutboundAction Allow
     Write-Log -Level INFO -Message "Standardregeln gesetzt: Eingehend=Block, Ausgehend=Allow"
 } catch {
     Write-Log -Level ERROR -Message "Fehler beim Setzen der Standardregeln: $($_.Exception.Message)"
