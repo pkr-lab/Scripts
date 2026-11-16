@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 Set-StrictMode -Version Latest
 
 # ----------------------------------------------------------------
@@ -8,22 +8,13 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $Global:PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
 
-# Optional: In PS7+ OnScriptError abonnieren, in 5.1 nicht verfügbar
-if ($PSVersionTable.PSVersion.Major -ge 7) {
-    Register-EngineEvent -SourceIdentifier PowerShell.OnScriptError -Action {
-        try {
-            $msg = $_.SourceArgs[0].Exception.Message
-            Write-Log -Level 'ERROR' -Message "PowerShell-Fehler: $msg"
-        } catch { }
-    } | Out-Null
-}
-
 # ----------------------------------------------------------------
 # MODUL LADEN & LOGGING STARTEN
 # ----------------------------------------------------------------
 
-$modulePath = 'C:\Users\Public\10020115_WinScripts\Win11_C\Software\Scripte\Logging.psm1'
+$modulePath = Join-Path $PSScriptRoot '..\Logging.psm1'
 Import-Module -Name $modulePath -ErrorAction Stop
+Import-Module -Name (Join-Path $PSScriptRoot '..\Common.psm1') -ErrorAction Stop
 
 Initialize-Logger -Level 'INFO'
 Write-Log -Level INFO -Message 'Starte Gesamt-Konfiguration - Personalisierung'
@@ -32,13 +23,7 @@ Write-Log -Level INFO -Message 'Starte Gesamt-Konfiguration - Personalisierung'
 # ADMIN-CHECK (für HKLM zwingend)
 # ----------------------------------------------------------------
 
-function Test-Admin {
-    $id  = [Security.Principal.WindowsIdentity]::GetCurrent()
-    $pri = [Security.Principal.WindowsPrincipal]::new($id)
-    return $pri.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
-}
-
-if (-not (Test-Admin)) {
+if (-not (Test-IsAdmin)) {
     Write-Log -Level ERROR -Message 'Dieses Skript muss als Administrator ausgeführt werden (HKLM-Policies).'
     throw 'Administratorrechte erforderlich.'
 }
@@ -76,7 +61,11 @@ foreach ($item in @(
     @{Path=$RegSysPol;   Name='Wallpaper'},
     @{Path=$RegSysPol;   Name='WallpaperStyle'}
 )) {
-    try { Remove-ItemProperty -Path $item.Path -Name $item.Name -ErrorAction SilentlyContinue } catch { }
+    try {
+        Remove-ItemProperty -Path $item.Path -Name $item.Name -ErrorAction SilentlyContinue
+    } catch {
+        Write-Log -Level DEBUG -Message "Nicht entfernt: $($item.Name) aus $($item.Path) - $($_.Exception.Message)"
+    }
 }
 
 Write-Log -Level INFO -Message 'Alle Richtlinien erfolgreich zurückgesetzt'
@@ -177,6 +166,11 @@ catch {
 # Gruppenrichtlinien aktualisieren (optional, falls GPOs vorhanden sind)
 try {
     gpupdate /target:computer /force | Out-Null
-} catch { }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Log -Level WARN -Message "gpupdate beendet mit Exit-Code $LASTEXITCODE"
+    }
+} catch {
+    Write-Log -Level DEBUG -Message "gpupdate nicht ausgefuehrt: $($_.Exception.Message)"
+}
 
 Write-Log -Level INFO -Message 'Gesamt-Konfiguration abgeschlossen'

@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -6,8 +6,9 @@ $ErrorActionPreference = 'Stop'
 # Modul laden & Logging starten
 # ---------------------------------------------------------
 
-$modulePath = "C:\Users\Public\10020115_WinScripts\Win11_C\Software\Scripte\Logging.psm1"
+$modulePath = Join-Path $PSScriptRoot '..\Logging.psm1'
 Import-Module $modulePath -ErrorAction Stop
+Import-Module (Join-Path $PSScriptRoot '..\Common.psm1') -ErrorAction Stop
 
 Initialize-Logger -Level "INFO"
 Write-Log -Level INFO -Message "Starte Firewall-Konfiguration"
@@ -16,9 +17,7 @@ Write-Log -Level INFO -Message "Starte Firewall-Konfiguration"
 # Admin-Check
 # ---------------------------------------------------------
 
-$id  = [Security.Principal.WindowsIdentity]::GetCurrent()
-$pri = [Security.Principal.WindowsPrincipal]::new($id)
-if (-not $pri.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+if (-not (Test-IsAdmin)) {
     Write-Log -Level ERROR -Message "Administratorrechte erforderlich."
     throw "Dieses Skript muss als Administrator ausgefuehrt werden."
 }
@@ -42,8 +41,7 @@ try {
 # ---------------------------------------------------------
 
 try {
-    Set-NetFirewallProfile -Profile Domain,Private -DefaultInboundAction Block -DefaultOutboundAction Allow
-    Set-NetFirewallProfile -Profile Public         -DefaultInboundAction Block -DefaultOutboundAction Allow
+    Set-NetFirewallProfile -Profile Domain,Private,Public -DefaultInboundAction Block -DefaultOutboundAction Allow
     Write-Log -Level INFO -Message "Standardregeln gesetzt: Eingehend=Block, Ausgehend=Allow"
 } catch {
     Write-Log -Level ERROR -Message "Fehler beim Setzen der Standardregeln: $($_.Exception.Message)"
@@ -55,10 +53,21 @@ try {
 # ---------------------------------------------------------
 
 $rulesToEnable = @(
-    "Remotedesktop-UserMode-In-TCP",   # RDP (falls benoetigt)
     "FPS-ICMP4-ERQ-In",                # Ping IPv4
     "FPS-ICMP6-ERQ-In"                 # Ping IPv6
 )
+
+try {
+    $konfiguration = Get-Konfiguration -Optional
+} catch {
+    Write-Log -Level WARN -Message "Konfiguration nicht lesbar, RDP bleibt unveraendert: $($_.Exception.Message)"
+    $konfiguration = @{}
+}
+if ($konfiguration['RdpErlauben'] -eq $true) {
+    $rulesToEnable += "Remotedesktop-UserMode-In-TCP"
+} else {
+    Write-Log -Level INFO -Message "RDP-Regel wird nicht aktiviert (RdpErlauben in Konfiguration.psd1 nicht gesetzt)."
+}
 
 foreach ($rule in $rulesToEnable) {
     try {

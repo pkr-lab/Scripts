@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -6,8 +6,9 @@ $ErrorActionPreference = 'Stop'
 # Modul laden & Logging starten
 # ---------------------------------------------------------
 
-$modulePath = "C:\Users\Public\10020115_WinScripts\Win11_C\Software\Scripte\Logging.psm1"
+$modulePath = Join-Path $PSScriptRoot '..\Logging.psm1'
 Import-Module $modulePath -ErrorAction Stop
+Import-Module (Join-Path $PSScriptRoot '..\Common.psm1') -ErrorAction Stop
 
 Initialize-Logger -Level "INFO"
 Write-Log -Level INFO -Message "Starte: Microsoft Store deaktivieren"
@@ -16,9 +17,7 @@ Write-Log -Level INFO -Message "Starte: Microsoft Store deaktivieren"
 # Admin-Check
 # ---------------------------------------------------------
 
-$id  = [Security.Principal.WindowsIdentity]::GetCurrent()
-$pri = [Security.Principal.WindowsPrincipal]::new($id)
-if (-not $pri.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+if (-not (Test-IsAdmin)) {
     Write-Log -Level ERROR -Message "Dieses Skript muss als Administrator ausgefuehrt werden (HKLM-Schreibzugriff)."
     throw "Administratorrechte erforderlich."
 }

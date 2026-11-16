@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 Erste-Einrichtung: Erstellt Verzeichnisstruktur und prueft Voraussetzungen.
 
@@ -17,23 +17,12 @@ $ErrorActionPreference = "Stop"
 # Modul laden & Logging starten
 # ---------------------------------------------------------
 
-$modulePath = "C:\Users\Public\10020115_WinScripts\Win11_C\Software\Scripte\Logging.psm1"
+$modulePath = Join-Path $PSScriptRoot '..\Logging.psm1'
 Import-Module $modulePath -ErrorAction Stop
+Import-Module (Join-Path $PSScriptRoot '..\Common.psm1') -ErrorAction Stop
 
 Initialize-Logger -Level "INFO"
 Write-Log -Level INFO -Message "=== Erste-Einrichtung gestartet ==="
-
-# Fehler-Handler nur in PS7+
-if ($PSVersionTable.PSVersion.Major -ge 7) {
-    try {
-        Register-EngineEvent -SourceIdentifier PowerShell.OnScriptError -Action {
-            try {
-                $msg = $_.SourceArgs[0].Exception.Message
-                Write-Log -Level "ERROR" -Message "PowerShell-Fehler: $msg"
-            } catch {}
-        } | Out-Null
-    } catch {}
-}
 
 # ---------------------------------------------------------
 # Verzeichnisstruktur sicherstellen
@@ -63,41 +52,9 @@ foreach ($dir in $baseDirs) {
 
 Write-Log -Level INFO -Message "=== Software-Inventur ==="
 
-$classicPaths = @(
-    "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall",
-    "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
-)
-
-function Get-InstalledPrograms {
-    param([string]$RegistryPath)
-    if (-not (Test-Path $RegistryPath)) {
-        Write-Log -Level WARN -Message "Registry-Pfad nicht gefunden: $RegistryPath"
-        return
-    }
-    Get-ChildItem $RegistryPath -ErrorAction SilentlyContinue | ForEach-Object {
-        try {
-            $props = Get-ItemProperty $_.PsPath -ErrorAction SilentlyContinue
-            if ($props.DisplayName) {
-                [PSCustomObject]@{
-                    Name        = $props.DisplayName
-                    Version     = $props.DisplayVersion
-                    Publisher   = $props.Publisher
-                    InstallDate = $props.InstallDate
-                }
-            }
-        } catch {
-            Write-Log -Level WARN -Message "Fehler beim Lesen eines Registry-Eintrags: $($_.Exception.Message)"
-        }
-    }
-}
-
 try {
-    $classicApps = foreach ($path in $classicPaths) {
-        Get-InstalledPrograms -RegistryPath $path
-    }
-
-    $sorted = $classicApps | Where-Object { $_ } | Sort-Object Name
-    if (-not $sorted -or $sorted.Count -eq 0) {
+    $sorted = @(Get-InstalledProgram | Sort-Object Name)
+    if ($sorted.Count -eq 0) {
         Write-Log -Level WARN -Message "Keine klassischen Programme gefunden."
     } else {
         Write-Log -Level INFO -Message "Klassische Programme: $($sorted.Count) gefunden."

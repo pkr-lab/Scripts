@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 Windows-Updates, Treiberupdates und Winget-Software-Updates installieren.
 
@@ -21,20 +21,9 @@ $ErrorActionPreference = "Stop"
 # Logging-Modul importieren
 # ---------------------------------------------------------
 
-$modulePath = "C:\Users\Public\10020115_WinScripts\Win11_C\Software\Scripte\Logging.psm1"
+$modulePath = Join-Path $PSScriptRoot '..\Logging.psm1'
 Import-Module $modulePath -ErrorAction Stop
-
-# Fehler-Handler nur in PS7+
-if ($PSVersionTable.PSVersion.Major -ge 7) {
-    try {
-        Register-EngineEvent -SourceIdentifier PowerShell.OnScriptError -Action {
-            try {
-                $msg = $_.SourceArgs[0].Exception.Message
-                Write-Log -Level "ERROR" -Message "PowerShell-Fehler: $msg"
-            } catch {}
-        } | Out-Null
-    } catch {}
-}
+Import-Module (Join-Path $PSScriptRoot '..\Common.psm1') -ErrorAction Stop
 
 # ---------------------------------------------------------
 # Hintergrundmodus: Erster Aufruf startet sich selbst hidden
@@ -75,7 +64,7 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force -ErrorAction Silently
 if (-not (Get-Module -ListAvailable -Name PSWindowsUpdate)) {
     Write-Log -Level INFO -Message "PSWindowsUpdate nicht gefunden – wird installiert..."
     try {
-        Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope AllUsers -ErrorAction Stop | Out-Null
+        Initialize-PackageInfrastructure
         Install-Module -Name PSWindowsUpdate -Force -Scope AllUsers -ErrorAction Stop
         Write-Log -Level INFO -Message "PSWindowsUpdate erfolgreich installiert."
     } catch {
@@ -154,9 +143,14 @@ Write-Log -Level INFO -Message "Pruefe Winget-Updates..."
 if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
     Write-Log -Level WARN -Message "winget nicht gefunden – Software-Updates werden uebersprungen."
 } else {
+    $vorherigeFehleraktion = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
     try {
         # Quellen aktualisieren
         winget source update 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Log -Level WARN -Message "winget source update beendet mit Exit-Code $LASTEXITCODE."
+        }
 
         # Verfuegbare Upgrades als Text auslesen (JSON-Ausgabe ist winget-versionsabhaengig)
         $upgradeOutput = winget upgrade --accept-source-agreements 2>&1 | Out-String
@@ -167,10 +161,16 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
             Write-Log -Level INFO -Message "Winget-Updates gefunden. Starte Installation..."
             winget upgrade --all --silent --accept-package-agreements --accept-source-agreements 2>&1 |
                 ForEach-Object { Write-Log -Level INFO -Message "winget: $_" }
-            Write-Log -Level INFO -Message "Winget-Updates abgeschlossen."
+            if ($LASTEXITCODE -eq 0) {
+                Write-Log -Level INFO -Message "Winget-Updates abgeschlossen."
+            } else {
+                Write-Log -Level WARN -Message "Winget-Updates beendet mit Exit-Code $LASTEXITCODE."
+            }
         }
     } catch {
         Write-Log -Level ERROR -Message "Fehler bei Winget-Updates: $($_.Exception.Message)"
+    } finally {
+        $ErrorActionPreference = $vorherigeFehleraktion
     }
 }
 

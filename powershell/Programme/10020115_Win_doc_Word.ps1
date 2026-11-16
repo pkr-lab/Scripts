@@ -1,11 +1,11 @@
-<#
+﻿<#
 .SYNOPSIS
 Kopiert .dotx-Vorlagen in %APPDATA%\Microsoft\Templates, setzt den Word-Benutzervorlagenpfad in der Registry
 und öffnet jede Vorlage einmal mit einer einzigen Word COM-Instanz (readonly).
 #>
 
 param(
-    [string]$ModulePath = "C:\Users\Public\10020115_WinScripts\Win11_C\Software\Scripte\Logging.psm1",
+    [string]$ModulePath = (Join-Path $PSScriptRoot '..\Logging.psm1'),
     [string]$TemplateSourcePath = "C:\Users\Public\10020115_WinScripts\Win11_C\Vorlagen",
     [ValidateSet("DEBUG","INFO","WARN","ERROR")]
     [string]$LogLevel = "INFO",
@@ -32,7 +32,7 @@ try {
 
     # --- Templates sammeln ---
     $Templates = Get-ChildItem -Path $TemplateSourcePath -Filter *.dotx -File -ErrorAction Stop
-    if (-not $Templates -or $Templates.Count -eq 0) {
+    if (-not $Templates) {
         Write-Log -Level WARN -Message "Keine .dotx Dateien im Ordner gefunden: $TemplateSourcePath"
         throw "Keine Vorlagen vorhanden."
     }
@@ -77,7 +77,6 @@ try {
             New-ItemProperty -Path $regPath -Name "PersonalTemplates" -PropertyType ExpandString -Value $expandValue -Force | Out-Null
             New-ItemProperty -Path $regPath -Name "USERTEMPLATES" -PropertyType ExpandString -Value $expandValue -Force | Out-Null
 
-            # <-- Hier die korrigierte Interpolation mit ${ver}
             Write-Log -Level INFO -Message "Registry gesetzt für Office ${ver}: $expandValue"
         }
         catch {
@@ -114,9 +113,9 @@ try {
             Write-Log -Level ERROR -Message "Fehler beim Starten von Word COM: $_"
         }
         finally {
-            if ($word -ne $null) {
-                try { $word.Quit() } catch {}
-                try { [System.Runtime.Interopservices.Marshal]::ReleaseComObject($word) | Out-Null } catch {}
+            if ($null -ne $word) {
+                try { $word.Quit() } catch { Write-Log -Level DEBUG -Message "Word.Quit fehlgeschlagen: $_" }
+                try { [System.Runtime.Interopservices.Marshal]::ReleaseComObject($word) | Out-Null } catch { Write-Log -Level DEBUG -Message "COM-Objekt nicht freigegeben: $_" }
                 Remove-Variable word -ErrorAction SilentlyContinue
                 [GC]::Collect()
                 [GC]::WaitForPendingFinalizers()

@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $Global:PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
@@ -6,30 +6,17 @@ $Global:PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
 # ---------------------------------------------------------
 # Logging-Modul laden
 # ---------------------------------------------------------
-$modulePath = "C:\Users\Public\10020115_WinScripts\Win11_C\Software\Scripte\Logging.psm1"
+$modulePath = Join-Path $PSScriptRoot '..\Logging.psm1'
 Import-Module $modulePath -ErrorAction Stop
+Import-Module (Join-Path $PSScriptRoot '..\Common.psm1') -ErrorAction Stop
 
 Initialize-Logger -Level "INFO"
 Write-Log -Level INFO -Message "Starte OEM-Branding & Legal Notice Konfiguration"
 
-# Fehler-Events nur in PS7+ (in 5.1 nicht verfügbar)
-if ($PSVersionTable.PSVersion.Major -ge 7) {
-    try {
-        Register-EngineEvent -SourceIdentifier PowerShell.OnScriptError -Action {
-            try {
-                $msg = $_.SourceArgs[0].Exception.Message
-                Write-Log -Level "ERROR" -Message "PowerShell-Fehler: $msg"
-            } catch {}
-        } | Out-Null
-    } catch {}
-}
-
 # ---------------------------------------------------------
 # Admin-Check (HKLM-Schreibzugriff)
 # ---------------------------------------------------------
-$id  = [Security.Principal.WindowsIdentity]::GetCurrent()
-$pri = [Security.Principal.WindowsPrincipal]::new($id)
-if (-not $pri.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+if (-not (Test-IsAdmin)) {
     Write-Log -Level ERROR -Message "Dieses Skript muss als Administrator ausgefuehrt werden."
     throw "Administratorrechte erforderlich."
 }
@@ -39,7 +26,12 @@ if (-not $pri.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) 
 # ---------------------------------------------------------
 $Manufacturer   = "DLRG-Jugend Andernach | EDV & Technik"
 $SupportHours   = "10-18 Uhr"
-$SupportPhone   = "+49 1575 6018834"
+try {
+    $SupportPhone = (Get-Konfiguration -Pflichtwert SupportTelefon).SupportTelefon
+} catch {
+    Write-Log -Level ERROR -Message "Konfiguration nicht verwendbar: $($_.Exception.Message)"
+    throw
+}
 $SupportURL     = "https://andernach.dlrg.de"
 $Model          = "Jugendnotebook"
 $LogoPath       = "C:\Users\Public\10020115_WinScripts\Win11_C\Bilder\Logo\Logo.bmp"

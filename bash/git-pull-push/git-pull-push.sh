@@ -12,11 +12,11 @@ AUSNAHMEN="${AUSNAHMEN:-}"
 LOESCHEN="${LOESCHEN:-false}"
 STAND_DATEI="${STAND_DATEI:-$QUELLE/.git/git-pull-deploy.stand}"
 
-log() { echo "[git-pull-deploy] $(date '+%F %T') $*" >&2; }
+log() { echo "[git-pull-push] $(date '+%F %T') $*" >&2; }
 
 usage() {
   cat <<'USAGE'
-Usage: git-pull-deploy.sh [--check] [--force]
+Usage: git-pull-push.sh [--check] [--force]
 
 Holt mit git pull den neuesten Stand von BRANCH nach QUELLE, kopiert den Inhalt ohne .git
 nach ZIEL und führt dort BEFEHL aus. Das passiert nur, wenn es seit dem letzten erfolgreichen
@@ -112,7 +112,7 @@ fi
 
 rsync_args=(-a --exclude=.git)
 read -r -a ausnahmen <<<"$AUSNAHMEN"
-for muster in "${ausnahmen[@]}"; do
+for muster in ${ausnahmen[@]+"${ausnahmen[@]}"}; do
   rsync_args+=("--exclude=${muster}")
 done
 if [ "$LOESCHEN" = true ]; then

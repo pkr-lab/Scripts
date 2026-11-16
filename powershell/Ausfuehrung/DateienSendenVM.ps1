@@ -1,10 +1,10 @@
-<#
+﻿<#
 .SYNOPSIS
 Hilfsbefehle für Hyper-V-Testumgebung: Dateien in VM kopieren, GPO-Backup/Import.
 
 .DESCRIPTION
 Dieses Skript enthält häufig benötigte Befehle für die Arbeit mit der Hyper-V-Testmaschine.
-Befehle einzeln ausführen oder gezielt auskommentieren.
+Die Aktionen werden über ein interaktives Menü ausgewählt.
 
 Voraussetzungen:
 - Hyper-V-Modul installiert (Windows Feature)
@@ -17,7 +17,7 @@ Voraussetzungen:
 param(
     [string]$VMName          = "*Win11ProTestUmgebung*",
     [string]$SourceZip       = "C:\Users\$env:USERNAME\IdeaProjects\PowerShell.zip",
-    [string]$DestinationInVM = "C:\Users\Win11ProTest\Desktop\PowerShell.zip",
+    [string]$DestinationInVM = "",
     [string]$GpoName         = "MeineTestGPO",
     [string]$GpoBackupPath   = "C:\GPO-Backups"
 )
@@ -28,6 +28,17 @@ $ErrorActionPreference = "Stop"
 # 1) Datei in VM kopieren (Hyper-V Guest Services erforderlich)
 # ---------------------------------------------------------
 function Send-FileToVM {
+    param(
+        [string]$VMName,
+        [string]$SourceZip,
+        [string]$DestinationInVM
+    )
+
+    if (-not $DestinationInVM) {
+        Import-Module (Join-Path $PSScriptRoot '..\Common.psm1') -ErrorAction Stop
+        $vmBenutzer = (Get-Konfiguration -Pflichtwert VmBenutzer).VmBenutzer
+        $DestinationInVM = "C:\Users\$vmBenutzer\Desktop\PowerShell.zip"
+    }
     Write-Host "Kopiere '$SourceZip' -> VM '$VMName' : '$DestinationInVM' ..."
 
     if (-not (Test-Path $SourceZip)) {
@@ -57,6 +68,11 @@ function Open-HyperVLocalAccount {
 # 3) GPO exportieren (Backup)
 # ---------------------------------------------------------
 function Export-GpoBackup {
+    param(
+        [string]$GpoName,
+        [string]$GpoBackupPath
+    )
+
     Write-Host "Exportiere GPO '$GpoName' nach '$GpoBackupPath' ..."
 
     if (-not (Test-Path $GpoBackupPath)) {
@@ -71,6 +87,11 @@ function Export-GpoBackup {
 # 4) GPO importieren (Restore)
 # ---------------------------------------------------------
 function Import-GpoBackup {
+    param(
+        [string]$GpoName,
+        [string]$GpoBackupPath
+    )
+
     Write-Host "Importiere GPO '$GpoName' aus '$GpoBackupPath' ..."
 
     Import-GPO -BackupGpoName $GpoName `
@@ -95,9 +116,9 @@ Write-Host ""
 $choice = Read-Host "Aktion waehlen (1-4)"
 
 switch ($choice) {
-    "1" { Send-FileToVM }
+    "1" { Send-FileToVM -VMName $VMName -SourceZip $SourceZip -DestinationInVM $DestinationInVM }
     "2" { Open-HyperVLocalAccount }
-    "3" { Export-GpoBackup }
-    "4" { Import-GpoBackup }
+    "3" { Export-GpoBackup -GpoName $GpoName -GpoBackupPath $GpoBackupPath }
+    "4" { Import-GpoBackup -GpoName $GpoName -GpoBackupPath $GpoBackupPath }
     default { Write-Warning "Ungültige Eingabe." }
 }
